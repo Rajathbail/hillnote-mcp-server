@@ -25,15 +25,24 @@ Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 - **macOS** (Windows support coming soon)
 - **Hillnote Desktop App** for macOS
 - **Node.js** >= 18.0.0
-- **Claude Desktop** or other MCP-compatible client
+- **MCP-compatible client** (Claude Desktop, Cursor, VS Code, etc.)
 
 ## Installation
 
 ### Option 1: Install from NPM (Recommended)
 
 ```bash
+# Install globally (IMPORTANT: Use -g flag!)
 npm install -g @hillnote/mcp-server
+
+# Verify installation worked
+npm list -g @hillnote/mcp-server
+
+# If using Homebrew Node.js, the files will be in:
+# /opt/homebrew/lib/node_modules/@hillnote/mcp-server/
 ```
+
+⚠️ **Important:** The `-g` flag is required for global installation. Without it, the package installs locally and won't work with the Claude Desktop configuration.
 
 ### Option 2: Install from Source
 
@@ -42,32 +51,34 @@ npm install -g @hillnote/mcp-server
 git clone https://github.com/HillnoteApp/hillnote-mcp-server.git
 cd hillnote-mcp-server
 
-# Install dependencies
+# Install dependencies (NO -g flag needed here)
 npm install
-
-# Run the server
-npm start
 ```
 
 ## Configuration
 
-### For Claude Desktop on macOS
+The MCP server automatically discovers all your Hillnote workspaces from the app's configuration at `~/Library/Application Support/Hillnote/workspaces.json`.
 
-Add to your Claude Desktop configuration file:
+### Configuration Examples
 
-Location: `~/Library/Application Support/Claude/claude_desktop_config.json`
+#### NPM Installation
+If installed via NPM, use your global Node modules path:
 
 ```json
 {
   "mcpServers": {
     "hillnote": {
-      "command": "hillnote-mcp"
+      "command": "node",
+      "args": ["/opt/homebrew/lib/node_modules/@hillnote/mcp-server/index.js"]
     }
   }
 }
 ```
 
-Or if installed from source:
+Find your path with: `npm root -g`
+
+#### Source Installation
+If cloned from GitHub:
 
 ```json
 {
@@ -80,7 +91,29 @@ Or if installed from source:
 }
 ```
 
-The MCP server automatically discovers all your Hillnote workspaces from the Hillnote app's configuration at `~/Library/Application Support/Hillnote/workspaces.json`.
+### Client-Specific Configuration
+
+<details>
+<summary><strong>Claude Desktop</strong></summary>
+
+Location: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Add the configuration above to this file.
+</details>
+
+<details>
+<summary><strong>Cursor</strong></summary>
+
+Location: Settings → Features → MCP
+
+Add the configuration above to the MCP servers section.
+</details>
+
+<details>
+<summary><strong>VS Code</strong></summary>
+
+Install an MCP extension and add the configuration to your settings.json or extension configuration.
+</details>
 
 ## Available Tools
 
