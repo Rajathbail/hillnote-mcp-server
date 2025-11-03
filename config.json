@@ -1,0 +1,23 @@
+{
+  "name": "hillnote-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Hillnote document management",
+  "protocol": "stdio",
+  "capabilities": {
+    "tools": true,
+    "resources": false,
+    "prompts": false
+  },
+  "defaultWorkspacePath": "~/Documents/Hillnote",
+  "filePatterns": {
+    "documents": "**/*.md",
+    "registry": "documents-registry.json",
+    "readme": "readme.md",
+    "promptOverrides": "ai_prompt_overrides.json"
+  },
+  "limits": {
+    "maxFileSize": 10485760,
+    "maxSearchResults": 100,
+    "maxContentLength": 1000000
+  }
+}

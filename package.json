@@ -1,0 +1,49 @@
+{
+  "name": "@hillnote/mcp-server",
+  "version": "0.1.1",
+  "description": "MCP server for Hillnote - AI-powered document management",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "hillnote-mcp": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "config.json",
+    "src/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "fuse.js": "^7.1.0",
+    "glob": "^10.3.10",
+    "gray-matter": "^4.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HillnoteApp/hillnote-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HillnoteApp/hillnote-mcp-server/issues"
+  },
+  "homepage": "https://hillnote.com",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "hillnote",
+    "documents",
+    "markdown",
+    "ai-tools"
+  ],
+  "author": "Hillnote Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
