@@ -8,6 +8,9 @@
 
 Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for **Hillnote**, enabling AI assistants to interact with your document workspaces programmatically.
 
+![1connect](https://github.com/user-attachments/assets/e5691ee2-0bc8-4b32-acac-0d9306cc7762)
+
+
 > **Platform Support:** Currently supports **macOS**. Windows support coming soon with Hillnote for Windows launch.
 
 ## Features
