@@ -71,8 +71,7 @@ If installed via NPM, use your global Node modules path:
 {
   "mcpServers": {
     "hillnote": {
-      "command": "node",
-      "args": ["/opt/homebrew/lib/node_modules/@hillnote/mcp-server/index.js"]
+      "command": "hillnote-mcp"
     }
   }
 }
