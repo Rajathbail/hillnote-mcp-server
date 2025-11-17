@@ -8,9 +8,6 @@
 
 Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for **Hillnote**, enabling AI assistants to interact with your document workspaces programmatically.
 
-![1connect](https://github.com/user-attachments/assets/e5691ee2-0bc8-4b32-acac-0d9306cc7762)
-
-
 > **Platform Support:** Currently supports **macOS**. Windows support coming soon with Hillnote for Windows launch.
 
 ## Features
@@ -21,6 +18,7 @@ Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 - ✏️ **Content Manipulation** - Advanced content editing with validation and preview
 - 🎯 **AI Recipes** - Manage and execute AI prompt recipes
 - 🛠️ **HTML Tools** - Create interactive HTML-based utilities
+- 📋 **Tasklist Management** - Create and manage Kanban-style tasklists with full task CRUD operations
 - 🏷️ **Metadata Support** - Rich document metadata with tags, emojis, and descriptions
 
 ## Requirements
@@ -57,6 +55,68 @@ cd hillnote-mcp-server
 # Install dependencies (NO -g flag needed here)
 npm install
 ```
+
+## Updating to Latest Version
+
+### NPM Installation
+
+```bash
+# Update to the latest version
+npm update -g @hillnote/mcp-server
+
+# Or reinstall to force latest version
+npm install -g @hillnote/mcp-server@latest
+
+# Check current version
+npm list -g @hillnote/mcp-server
+
+# After updating, restart your MCP client (Claude Desktop, Cursor, etc.)
+```
+
+### Source Installation
+
+```bash
+# Navigate to your cloned repository
+cd /path/to/hillnote-mcp-server
+
+# Pull latest changes
+git pull origin main
+
+# Reinstall dependencies
+npm install
+
+# After updating, restart your MCP client
+```
+
+### Version Check
+
+To see what version you're currently running:
+
+```bash
+# For NPM installation
+npm list -g @hillnote/mcp-server
+
+# For source installation
+cd /path/to/hillnote-mcp-server
+cat package.json | grep version
+```
+
+### Troubleshooting Updates
+
+If you experience issues after updating:
+
+1. **Clear npm cache:**
+   ```bash
+   npm cache clean --force
+   ```
+
+2. **Uninstall and reinstall:**
+   ```bash
+   npm uninstall -g @hillnote/mcp-server
+   npm install -g @hillnote/mcp-server
+   ```
+
+3. **Restart your MCP client completely** (not just reload - fully quit and reopen)
 
 ## Configuration
 
@@ -317,6 +377,100 @@ Delete a recipe.
 // Returns: { success: true }
 ```
 
+### 📋 Tasklist Management
+
+#### `create_tasklist`
+Create a new tasklist (Kanban board) in a workspace.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   tasklist: {
+//     name: "Project Tasks",
+//     columns: [
+//       { name: "To Do", color: "blue" },
+//       { name: "In Progress", color: "orange" },
+//       { name: "Done", isDoneColumn: true, color: "green" }
+//     ],
+//     viewMode: "projects"  // or "flat"
+//   }
+// }
+// Returns: { success: true, tasklistName: "...", tasklistPath: "documents/...", columns: [...] }
+```
+
+#### `list_tasklists`
+List all tasklists in a workspace.
+
+```javascript
+// Input: { workspace: "workspace-name" }
+// Returns: Array of tasklists with task counts, project counts, and columns
+```
+
+#### `read_tasklist`
+Read a complete tasklist structure with all task metadata.
+
+```javascript
+// Input: { workspace: "workspace-name", tasklist: "Project Tasks" }
+// Returns: Complete tasklist with columns, projects, tasks, and metadata
+// Note: Task content not included - use read_document to read task content
+```
+
+#### `add_task`
+Create a new task in a tasklist.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   tasklist: "Project Tasks",
+//   task: {
+//     name: "Implement feature X",
+//     content: "Task description...",
+//     status: "To Do",
+//     project: "Backend",  // optional
+//     priority: "high",    // low, medium, high
+//     assignedTo: "user@example.com",
+//     startDate: "2024-01-01",
+//     endDate: "2024-01-15",
+//     isRecurring: false,
+//     emoji: "🔥"
+//   }
+// }
+// Returns: { success: true, taskName: "...", taskPath: "...", status: "..." }
+```
+
+#### `update_task_status`
+Move a task to a different column/status.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   tasklist: "Project Tasks",
+//   taskName: "Implement feature X",
+//   newStatus: "In Progress"
+// }
+// Returns: { success: true, taskName: "...", oldStatus: "...", newStatus: "..." }
+```
+
+#### `update_task_metadata`
+Update task properties (priority, assignments, dates, recurring settings).
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   tasklist: "Project Tasks",
+//   taskName: "Implement feature X",
+//   metadata: {
+//     priority: "high",
+//     assignedTo: "user@example.com",
+//     startDate: "2024-01-01",
+//     endDate: "2024-01-15",
+//     isRecurring: true,
+//     recurrenceFrequency: "weekly"  // daily, weekly, monthly, yearly
+//   }
+// }
+// Returns: { success: true, taskName: "...", updatedFields: [...] }
+```
+
 ### 🛠️ HTML Tool Management
 
 #### `add_html_tool`
@@ -381,10 +535,15 @@ Hillnote workspaces on macOS are typically stored in your Documents folder or cu
 ├── readme.md                 # Workspace overview
 ├── documents-registry.json   # Document metadata
 ├── ai-recipes.json          # AI prompt recipes
-├── documents/               # Markdown documents
+├── documents/               # Markdown documents and tasklists
 │   ├── document-1.md
-│   └── folder/
-│       └── document-2.md
+│   ├── folder/
+│   │   └── document-2.md
+│   └── Project Tasks/       # Tasklist (Kanban board)
+│       ├── tasklist.json    # Tasklist configuration
+│       ├── task-1.md        # Root-level task
+│       └── Backend/         # Project folder
+│           └── task-2.md    # Task in project
 └── resources/               # Assets and tools
     ├── images/             # Image attachments
     └── html/               # HTML tools
@@ -429,7 +588,8 @@ mcp-server/
 │   │   ├── content.js     # Content manipulation
 │   │   ├── search.js      # Search tools
 │   │   ├── recipe.js      # Recipe management
-│   │   └── html-tool.js   # HTML tool management
+│   │   ├── html-tool.js   # HTML tool management
+│   │   └── tasklist.js    # Tasklist/Kanban management
 │   └── utils/
 │       └── helpers.js     # Utility functions
 └── README.md

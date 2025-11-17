@@ -195,7 +195,7 @@ export async function deleteDocument(workspaceIdOrPath, documentId) {
 export const documentTools = [
   {
     name: 'read_document',
-    description: 'Read a specific document',
+    description: 'Read a specific document or task. Works with both regular documents and tasks from tasklists (tasks are markdown documents).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -205,7 +205,7 @@ export const documentTools = [
         },
         documentId: {
           type: 'string',
-          description: 'Document ID from registry'
+          description: 'Document ID, path from registry, or task path (e.g., "documents/Mobile Tasks/Core/task-name.md")'
         }
       },
       required: ['workspace', 'documentId']
@@ -213,7 +213,7 @@ export const documentTools = [
   },
   {
     name: 'add_document',
-    description: 'Create a new document in a workspace, optionally in a specific folder',
+    description: 'Create a new document in a workspace, optionally in a specific folder. NOTE: Do NOT use this for tasks in tasklists - use add_task instead.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -256,18 +256,21 @@ export const documentTools = [
   },
   {
     name: 'rename_document',
-    description: 'Rename a document',
+    description: 'Rename a document. NOTE: Do NOT use this for tasks in tasklists - use rename_task instead.',
     inputSchema: {
       type: 'object',
       properties: {
         workspace: {
-          type: 'string'
+          type: 'string',
+          description: 'Workspace path/name'
         },
         documentId: {
-          type: 'string'
+          type: 'string',
+          description: 'Document ID or path'
         },
         newTitle: {
-          type: 'string'
+          type: 'string',
+          description: 'New title for the document'
         }
       },
       required: ['workspace', 'documentId', 'newTitle']
@@ -275,7 +278,7 @@ export const documentTools = [
   },
   {
     name: 'delete_document',
-    description: 'Delete a document. IMPORTANT: You must provide the full document path from the registry (e.g., "documents/my-document.md" or "documents/folder/my-document.md")',
+    description: 'Delete a document. IMPORTANT: You must provide the full document path from the registry (e.g., "documents/my-document.md" or "documents/folder/my-document.md"). NOTE: Do NOT use this for tasks in tasklists - use delete_task instead.',
     inputSchema: {
       type: 'object',
       properties: {
