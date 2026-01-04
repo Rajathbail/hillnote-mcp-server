@@ -175,7 +175,31 @@ export async function readWorkspaceMetadata(workspacePath) {
 
 /**
  * Generate a safe filename from a title
+ * Handles special extensions like .slides.md
  */
 export function generateFileName(title) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`;
+  // Check if this is a slides file (ends with .slides.md or .slides)
+  const isSlidesFile = title.toLowerCase().endsWith('.slides.md') || title.toLowerCase().endsWith('.slides');
+
+  // Remove the extension for processing
+  let baseName = title;
+  if (isSlidesFile) {
+    if (title.toLowerCase().endsWith('.slides.md')) {
+      baseName = title.slice(0, -10); // Remove '.slides.md'
+    } else {
+      baseName = title.slice(0, -7); // Remove '.slides'
+    }
+  } else if (title.toLowerCase().endsWith('.md')) {
+    baseName = title.slice(0, -3); // Remove '.md'
+  }
+
+  const sanitized = baseName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+
+  // Add back the appropriate extension
+  return isSlidesFile ? `${sanitized}.slides.md` : `${sanitized}.md`;
 }

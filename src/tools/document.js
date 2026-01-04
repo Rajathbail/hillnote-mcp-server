@@ -69,24 +69,27 @@ export async function addDocument(workspaceIdOrPath, title, content = '', tags =
     const documentId = Date.now().toString();
     const fileName = generateFileName(title);
     const filePath = path.join(targetPath, fileName);
-    
+
+    // Check if this is a slides file - don't add header to slides (it breaks frontmatter)
+    const isSlidesDocument = fileName.endsWith('.slides.md');
+
     // Format creation date
     const creationDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
-    
-    // Build document header
+
+    // Build document header (skip for slides files to preserve frontmatter)
     let documentHeader = '';
-    if (aiModel || aiNote) {
+    if (!isSlidesDocument && (aiModel || aiNote)) {
       documentHeader = `### This document was added on ${creationDate}${aiModel ? ` by ${aiModel}` : ''}\n`;
       if (aiNote) {
         documentHeader += `AI Note: ${aiNote}\n`;
       }
       documentHeader += '\n---\n\n';
     }
-    
+
     // Create document content WITHOUT frontmatter
     const fullContent = documentHeader + content;
     
@@ -213,7 +216,7 @@ export const documentTools = [
   },
   {
     name: 'add_document',
-    description: 'Create a new document in a workspace, optionally in a specific folder. NOTE: Do NOT use this for tasks in tasklists - use add_task instead.',
+    description: 'Create a new document in a workspace, optionally in a specific folder. NOTE: Do NOT use this for tasks in tasklists - use add_task instead. FOR SLIDES: To create a slide presentation, the title MUST end with ".slides.md" (e.g., "My Presentation.slides.md" or "Growth Hacker Marketing.slides.md"). Do NOT use "-slides" in the title - use the ".slides.md" extension instead.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -223,7 +226,7 @@ export const documentTools = [
         },
         title: {
           type: 'string',
-          description: 'Document title'
+          description: 'Document title. For slide presentations, end with ".slides.md" (e.g., "My Topic.slides.md"). The system will sanitize the title into a filename.'
         },
         content: {
           type: 'string',

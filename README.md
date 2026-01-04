@@ -19,6 +19,7 @@ Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 - 🎯 **AI Recipes** - Manage and execute AI prompt recipes
 - 🛠️ **HTML Tools** - Create interactive HTML-based utilities
 - 📋 **Tasklist Management** - Create and manage Kanban-style tasklists with full task CRUD operations
+- 🎨 **Slide Presentations** - Create and edit slide presentations with themes, charts, and templates
 - 🏷️ **Metadata Support** - Rich document metadata with tags, emojis, and descriptions
 
 ## Requirements
@@ -471,6 +472,47 @@ Update task properties (priority, assignments, dates, recurring settings).
 // Returns: { success: true, taskName: "...", updatedFields: [...] }
 ```
 
+### 🎨 Slide Presentations
+
+#### `get_slides_guide`
+Get the comprehensive guide for creating and editing slide presentations in Hillnote.
+
+```javascript
+// No input required
+// Returns: Complete guide with syntax, templates, chart types, and best practices
+```
+
+**Important:** When creating slides with `add_document`, the title MUST end with `.slides.md` (e.g., "My Presentation.slides.md"). The `.slides.md` extension is what makes it a slide presentation.
+
+**Example workflow:**
+```javascript
+// 1. Get the slides guide first
+get_slides_guide()
+
+// 2. Create a new slide presentation
+add_document({
+  workspace: "workspace-name",
+  name: "Quarterly Review.slides.md",  // Note: ends with .slides.md
+  content: `---
+type: slides
+theme: minimal
+---
+
+# Quarterly Review
+
+Q4 2024 Results
+
+---
+
+# Key Metrics
+
+- Revenue: $1.2M
+- Growth: 25%
+- Users: 10,000+
+`
+})
+```
+
 ### 🛠️ HTML Tool Management
 
 #### `add_html_tool`
@@ -589,7 +631,8 @@ mcp-server/
 │   │   ├── search.js      # Search tools
 │   │   ├── recipe.js      # Recipe management
 │   │   ├── html-tool.js   # HTML tool management
-│   │   └── tasklist.js    # Tasklist/Kanban management
+│   │   ├── tasklist.js    # Tasklist/Kanban management
+│   │   └── slides.js      # Slide presentation guide
 │   └── utils/
 │       └── helpers.js     # Utility functions
 └── README.md

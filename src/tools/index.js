@@ -10,6 +10,7 @@ import { searchTools, searchHandlers } from './search.js';
 import { recipeTools, recipeHandlers } from './recipe.js';
 import { htmlToolTools, htmlToolHandlers } from './html-tool.js';
 import { tasklistTools, tasklistHandlers } from './tasklist.js';
+import { slidesTools, slidesHandlers } from './slides.js';
 
 // Export all tool definitions
 export const tools = [
@@ -19,7 +20,8 @@ export const tools = [
   ...searchTools,
   ...recipeTools,
   ...htmlToolTools,
-  ...tasklistTools
+  ...tasklistTools,
+  ...slidesTools
 ];
 
 // Export all handlers
@@ -30,7 +32,8 @@ export const handlers = {
   ...searchHandlers,
   ...recipeHandlers,
   ...htmlToolHandlers,
-  ...tasklistHandlers
+  ...tasklistHandlers,
+  ...slidesHandlers
 };
 
 // Export individual tool categories for flexibility
@@ -48,5 +51,7 @@ export {
   htmlToolTools,
   htmlToolHandlers,
   tasklistTools,
-  tasklistHandlers
+  tasklistHandlers,
+  slidesTools,
+  slidesHandlers
 };
