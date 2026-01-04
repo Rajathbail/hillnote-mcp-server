@@ -216,7 +216,7 @@ export const documentTools = [
   },
   {
     name: 'add_document',
-    description: 'Create a new document in a workspace, optionally in a specific folder. NOTE: Do NOT use this for tasks in tasklists - use add_task instead. FOR SLIDES: To create a slide presentation, the title MUST end with ".slides.md" (e.g., "My Presentation.slides.md" or "Growth Hacker Marketing.slides.md"). Do NOT use "-slides" in the title - use the ".slides.md" extension instead.',
+    description: 'Create a new document in a workspace, optionally in a specific folder. NOTE: Do NOT use this for tasks in tasklists - use add_task instead. FOR SLIDES: IMPORTANT - Before creating a slide presentation, you MUST first call get_slides_guide to understand the proper slide format, templates, and syntax. To create slides, the title MUST end with ".slides.md" (e.g., "My Presentation.slides.md" or "Growth Hacker Marketing.slides.md").',
     inputSchema: {
       type: 'object',
       properties: {
