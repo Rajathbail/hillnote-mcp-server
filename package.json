@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "hillnote-mcp": "./index.js"
+    "hillnote-mcp": "index.js"
   },
   "files": [
     "index.js",
