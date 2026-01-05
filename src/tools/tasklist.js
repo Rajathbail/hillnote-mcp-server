@@ -584,6 +584,120 @@ export async function createTasklist(workspaceIdOrPath, tasklistData) {
 }
 
 /**
+ * Read tasklist activity log
+ * Reads the activity log file (tasklist-activity.log) from a tasklist folder
+ * Returns parsed entries in reverse chronological order (most recent first)
+ */
+export async function readTasklistActivityLog(workspaceIdOrPath, tasklistNameOrPath, options = {}) {
+  try {
+    const workspace = await resolveWorkspace(workspaceIdOrPath);
+
+    // Determine the tasklist path
+    let tasklistPath;
+    if (tasklistNameOrPath.startsWith('/') || tasklistNameOrPath.includes('\\')) {
+      tasklistPath = tasklistNameOrPath;
+    } else if (tasklistNameOrPath.startsWith('documents/')) {
+      tasklistPath = path.join(workspace.path, tasklistNameOrPath);
+    } else {
+      tasklistPath = path.join(workspace.path, 'documents', tasklistNameOrPath);
+    }
+
+    const logPath = path.join(tasklistPath, 'tasklist-activity.log');
+    const limit = options.limit || 100;
+    const days = options.days;
+
+    // Read the log file
+    let content;
+    try {
+      content = await fs.readFile(logPath, 'utf-8');
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        return {
+          workspace: workspace.name,
+          workspacePath: workspace.path,
+          tasklistPath: path.relative(workspace.path, tasklistPath),
+          entries: [],
+          count: 0,
+          message: 'No activity log found. Activity logging starts when tasks are created, moved, or modified in the Hillnote app.'
+        };
+      }
+      throw error;
+    }
+
+    if (!content || !content.trim()) {
+      return {
+        workspace: workspace.name,
+        workspacePath: workspace.path,
+        tasklistPath: path.relative(workspace.path, tasklistPath),
+        entries: [],
+        count: 0,
+        message: 'Activity log is empty'
+      };
+    }
+
+    // Parse JSONL content
+    const lines = content.trim().split('\n').filter(line => line.trim());
+    let entries = lines
+      .map(line => {
+        try {
+          return JSON.parse(line);
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter(entry => entry !== null);
+
+    // Filter by days if specified
+    if (days) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      entries = entries.filter(e => new Date(e.t) >= cutoffDate);
+    }
+
+    // Return most recent entries first, limited by count
+    entries = entries.slice(-limit).reverse();
+
+    // Build summary statistics
+    const summary = {
+      totalActivities: entries.length,
+      byType: {},
+      tasksCreated: 0,
+      tasksCompleted: 0,
+      tasksDeleted: 0,
+      tasksMoved: 0
+    };
+
+    entries.forEach(entry => {
+      // Count by type
+      summary.byType[entry.a] = (summary.byType[entry.a] || 0) + 1;
+
+      // Track specific metrics
+      if (entry.a === 'created') summary.tasksCreated++;
+      if (entry.a === 'deleted') summary.tasksDeleted++;
+      if (entry.a === 'moved') {
+        summary.tasksMoved++;
+        // Check if moved to a "done" column
+        if (entry.to?.toLowerCase().includes('done')) {
+          summary.tasksCompleted++;
+        }
+      }
+    });
+
+    return {
+      workspace: workspace.name,
+      workspacePath: workspace.path,
+      tasklistPath: path.relative(workspace.path, tasklistPath),
+      entries,
+      count: entries.length,
+      summary,
+      _note: 'Log format: t=timestamp, a=action type, task=task name, proj=project, from/to=status transitions. Action types: created, deleted, moved, renamed, updated, reset, proj_created, proj_deleted, proj_renamed, col_created, col_deleted, col_updated, col_reordered'
+    };
+  } catch (error) {
+    throw new McpError(ErrorCode.InternalError, `Failed to read activity log: ${error.message}`);
+  }
+}
+
+/**
  * Add a new task to a tasklist
  */
 export async function addTask(workspaceIdOrPath, tasklistNameOrPath, taskData) {
@@ -994,6 +1108,38 @@ export const tasklistTools = [
       },
       required: ['workspace', 'tasklist', 'task']
     }
+  },
+  {
+    name: 'read_tasklist_activity_log',
+    description: 'Read the activity log for a tasklist. Returns a history of all task movements, creations, deletions, and modifications. Useful for generating productivity insights, tracking progress over time, and understanding task flow patterns. Log format uses compact field names: t=timestamp, a=action, task=name, proj=project, from/to=status transitions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspace: {
+          type: 'string',
+          description: 'Workspace path, name, or ID'
+        },
+        tasklist: {
+          type: 'string',
+          description: 'Tasklist name or relative path (e.g., "Mobile Tasks")'
+        },
+        options: {
+          type: 'object',
+          description: 'Optional filtering options',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of entries to return (default: 100, most recent first)'
+            },
+            days: {
+              type: 'number',
+              description: 'Only return entries from the last N days'
+            }
+          }
+        }
+      },
+      required: ['workspace', 'tasklist']
+    }
   }
 ];
 
@@ -1004,5 +1150,6 @@ export const tasklistHandlers = {
   read_tasklist: async (args) => readTasklist(args.workspace, args.tasklist),
   update_task_status: async (args) => updateTaskStatus(args.workspace, args.tasklist, args.taskName, args.newStatus),
   update_task_metadata: async (args) => updateTaskMetadata(args.workspace, args.tasklist, args.taskName, args.metadata),
-  add_task: async (args) => addTask(args.workspace, args.tasklist, args.task)
+  add_task: async (args) => addTask(args.workspace, args.tasklist, args.task),
+  read_tasklist_activity_log: async (args) => readTasklistActivityLog(args.workspace, args.tasklist, args.options || {})
 };
