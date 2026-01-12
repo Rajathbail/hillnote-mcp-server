@@ -262,6 +262,44 @@ Available chart types:
 
 Charts are treated as text blocks, meaning they stack vertically with other text content.
 
+## Mermaid Diagrams - To help make the deck visual
+
+Mermaid diagrams are fully supported in slides for creating flowcharts, sequence diagrams, Gantt charts, and more. Simply use a standard mermaid code fence:
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+    C --> E[End]
+    D --> E
+\`\`\`
+
+Supported diagram types:
+- **Flowcharts** - \`graph TD\` or \`graph LR\` for process flows
+- **Sequence diagrams** - \`sequenceDiagram\` for interactions between components
+- **Gantt charts** - \`gantt\` for project timelines and schedules
+- **Class diagrams** - \`classDiagram\` for object-oriented structures
+- **State diagrams** - \`stateDiagram-v2\` for state machines
+- **Entity Relationship** - \`erDiagram\` for database schemas
+- **Pie charts** - \`pie\` for simple proportional data
+- **Mind maps** - \`mindmap\` for hierarchical ideas
+
+Example Gantt chart:
+\`\`\`mermaid
+gantt
+    title Project Timeline
+    dateFormat YYYY-MM-DD
+    section Planning
+    Requirements :a1, 2024-01-01, 7d
+    Design       :a2, after a1, 5d
+    section Development
+    Backend      :b1, after a2, 14d
+    Frontend     :b2, after a2, 14d
+\`\`\`
+
+Mermaid diagrams are treated as text blocks and will stack vertically with other content. They automatically adapt to light/dark mode.
+
 ## Inline Formatting
 
 Markdown formatting works within slides:
