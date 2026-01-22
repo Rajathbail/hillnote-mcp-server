@@ -239,9 +239,11 @@ Use \`~split\` on its own line to force the next text content into a new column 
 Without \`~split\`: both tables stack in 1 column
 With \`~split\`: tables are in 2 separate columns
 
-## Charts with Raw Markdown
+## Charts (Optional - For Numeric Data Visualization)
 
-Add \`~bar\`, \`~line\`, \`~pie\`, or \`~area\` on its own line before a markdown table to render it as a chart:
+**Regular tables render as tables by default - no markers needed.**
+
+Only use \`~bar\`, \`~line\`, \`~pie\`, or \`~area\` when you want to convert a numeric data table into a visual chart:
 
 \`\`\`markdown
 ~bar
@@ -254,11 +256,15 @@ Add \`~bar\`, \`~line\`, \`~pie\`, or \`~area\` on its own line before a markdow
 | Q4      | 280     |
 \`\`\`
 
+**When to use charts vs tables:**
+- **Use a plain table** (no marker) for text-based data, comparisons, feature lists, or any non-numeric information
+- **Use a chart marker** only when you have numeric data that benefits from visual representation (trends, comparisons over time, proportions)
+
 Available chart types:
-- \`~bar\` - Vertical bar chart
-- \`~line\` - Line chart
-- \`~pie\` - Pie chart
-- \`~area\` - Area chart
+- \`~bar\` - Vertical bar chart (good for comparing categories)
+- \`~line\` - Line chart (good for trends over time)
+- \`~pie\` - Pie chart (good for showing proportions of a whole)
+- \`~area\` - Area chart (good for cumulative trends)
 
 Charts are treated as text blocks, meaning they stack vertically with other text content.
 

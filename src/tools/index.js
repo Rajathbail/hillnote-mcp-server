@@ -11,6 +11,7 @@ import { recipeTools, recipeHandlers } from './recipe.js';
 import { htmlToolTools, htmlToolHandlers } from './html-tool.js';
 import { tasklistTools, tasklistHandlers } from './tasklist.js';
 import { slidesTools, slidesHandlers } from './slides.js';
+import { databaseTools, databaseHandlers } from './database.js';
 
 // Export all tool definitions
 export const tools = [
@@ -21,7 +22,8 @@ export const tools = [
   ...recipeTools,
   ...htmlToolTools,
   ...tasklistTools,
-  ...slidesTools
+  ...slidesTools,
+  ...databaseTools
 ];
 
 // Export all handlers
@@ -33,7 +35,8 @@ export const handlers = {
   ...recipeHandlers,
   ...htmlToolHandlers,
   ...tasklistHandlers,
-  ...slidesHandlers
+  ...slidesHandlers,
+  ...databaseHandlers
 };
 
 // Export individual tool categories for flexibility
@@ -53,5 +56,7 @@ export {
   tasklistTools,
   tasklistHandlers,
   slidesTools,
-  slidesHandlers
+  slidesHandlers,
+  databaseTools,
+  databaseHandlers
 };
