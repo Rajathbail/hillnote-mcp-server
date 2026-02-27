@@ -70,8 +70,9 @@ export async function addDocument(workspaceIdOrPath, title, content = '', tags =
     const fileName = generateFileName(title);
     const filePath = path.join(targetPath, fileName);
 
-    // Check if this is a slides file - don't add header to slides (it breaks frontmatter)
+    // Check if this is a slides or canvas file - don't add header (it breaks frontmatter/JSON)
     const isSlidesDocument = fileName.endsWith('.slides.md');
+    const isCanvasDocument = fileName.endsWith('.canvas.md');
 
     // Format creation date
     const creationDate = new Date().toLocaleDateString('en-US', {
@@ -80,9 +81,9 @@ export async function addDocument(workspaceIdOrPath, title, content = '', tags =
       day: 'numeric'
     });
 
-    // Build document header (skip for slides files to preserve frontmatter)
+    // Build document header (skip for slides and canvas files)
     let documentHeader = '';
-    if (!isSlidesDocument && (aiModel || aiNote)) {
+    if (!isSlidesDocument && !isCanvasDocument && (aiModel || aiNote)) {
       documentHeader = `### This document was added on ${creationDate}${aiModel ? ` by ${aiModel}` : ''}\n`;
       if (aiNote) {
         documentHeader += `AI Note: ${aiNote}\n`;
@@ -90,8 +91,14 @@ export async function addDocument(workspaceIdOrPath, title, content = '', tags =
       documentHeader += '\n---\n\n';
     }
 
-    // Create document content WITHOUT frontmatter
-    const fullContent = documentHeader + content;
+    // Create document content — canvas files get default Excalidraw content
+    let fullContent;
+    if (isCanvasDocument && !content) {
+      const canvasJson = JSON.stringify({ type: 'excalidraw', version: 2, elements: [], appState: {}, files: {} });
+      fullContent = `---\ntype: canvas\n---\n\n\`\`\`excalidraw\n${canvasJson}\n\`\`\`\n`;
+    } else {
+      fullContent = documentHeader + content;
+    }
     
     // Write document file without frontmatter
     await fs.writeFile(filePath, fullContent);
@@ -216,7 +223,7 @@ export const documentTools = [
   },
   {
     name: 'add_document',
-    description: 'Create a new document in a workspace, optionally in a specific folder. NOTE: Do NOT use this for tasks in tasklists - use add_task instead. FOR SLIDES: IMPORTANT - Before creating a slide presentation, you MUST first call get_slides_guide to understand the proper slide format, templates, and syntax. To create slides, the title MUST end with ".slides.md" (e.g., "My Presentation.slides.md" or "Growth Hacker Marketing.slides.md").',
+    description: 'Create a new document in a workspace, optionally in a specific folder. NOTE: Do NOT use this for tasks in tasklists - use add_task instead. FOR SLIDES: IMPORTANT - Before creating a slide presentation, you MUST first call get_slides_guide. The title MUST end with ".slides.md" (e.g., "My Presentation.slides.md"). FOR CANVAS: Before creating a canvas, call get_canvas_guide. The title MUST end with ".canvas.md" (e.g., "Architecture Diagram.canvas.md"). Do NOT provide content for canvas files — the system generates it.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -226,7 +233,7 @@ export const documentTools = [
         },
         title: {
           type: 'string',
-          description: 'Document title. For slide presentations, end with ".slides.md" (e.g., "My Topic.slides.md"). The system will sanitize the title into a filename.'
+          description: 'Document title. For slides, end with ".slides.md". For canvas, end with ".canvas.md" (e.g., "Diagram.canvas.md"). The system sanitizes the title into a filename.'
         },
         content: {
           type: 'string',

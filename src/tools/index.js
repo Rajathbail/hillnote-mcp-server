@@ -12,6 +12,10 @@ import { htmlToolTools, htmlToolHandlers } from './html-tool.js';
 import { tasklistTools, tasklistHandlers } from './tasklist.js';
 import { slidesTools, slidesHandlers } from './slides.js';
 import { databaseTools, databaseHandlers } from './database.js';
+import { canvasTools, canvasHandlers } from './canvas.js';
+// Note: Navigation tools (show_user_file, show_user_workspace) are intentionally excluded
+// from the MCP server because they require UI interaction within the Hillnote app.
+// They only work when called from the in-app Chat component.
 
 // Export all tool definitions
 export const tools = [
@@ -23,7 +27,8 @@ export const tools = [
   ...htmlToolTools,
   ...tasklistTools,
   ...slidesTools,
-  ...databaseTools
+  ...databaseTools,
+  ...canvasTools
 ];
 
 // Export all handlers
@@ -36,7 +41,8 @@ export const handlers = {
   ...htmlToolHandlers,
   ...tasklistHandlers,
   ...slidesHandlers,
-  ...databaseHandlers
+  ...databaseHandlers,
+  ...canvasHandlers
 };
 
 // Export individual tool categories for flexibility
@@ -58,5 +64,7 @@ export {
   slidesTools,
   slidesHandlers,
   databaseTools,
-  databaseHandlers
+  databaseHandlers,
+  canvasTools,
+  canvasHandlers
 };

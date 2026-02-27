@@ -175,11 +175,12 @@ export async function readWorkspaceMetadata(workspacePath) {
 
 /**
  * Generate a safe filename from a title
- * Handles special extensions like .slides.md
+ * Handles special extensions like .slides.md and .canvas.md
  */
 export function generateFileName(title) {
-  // Check if this is a slides file (ends with .slides.md or .slides)
+  // Check if this is a slides or canvas file
   const isSlidesFile = title.toLowerCase().endsWith('.slides.md') || title.toLowerCase().endsWith('.slides');
+  const isCanvasFile = title.toLowerCase().endsWith('.canvas.md') || title.toLowerCase().endsWith('.canvas');
 
   // Remove the extension for processing
   let baseName = title;
@@ -188,6 +189,12 @@ export function generateFileName(title) {
       baseName = title.slice(0, -10); // Remove '.slides.md'
     } else {
       baseName = title.slice(0, -7); // Remove '.slides'
+    }
+  } else if (isCanvasFile) {
+    if (title.toLowerCase().endsWith('.canvas.md')) {
+      baseName = title.slice(0, -10); // Remove '.canvas.md'
+    } else {
+      baseName = title.slice(0, -7); // Remove '.canvas'
     }
   } else if (title.toLowerCase().endsWith('.md')) {
     baseName = title.slice(0, -3); // Remove '.md'
@@ -201,5 +208,7 @@ export function generateFileName(title) {
     .trim();
 
   // Add back the appropriate extension
-  return isSlidesFile ? `${sanitized}.slides.md` : `${sanitized}.md`;
+  if (isSlidesFile) return `${sanitized}.slides.md`;
+  if (isCanvasFile) return `${sanitized}.canvas.md`;
+  return `${sanitized}.md`;
 }

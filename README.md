@@ -20,6 +20,7 @@ Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 - 🛠️ **HTML Tools** - Create interactive HTML-based utilities
 - 📋 **Tasklist Management** - Create and manage Kanban-style tasklists with full task CRUD operations
 - 🎨 **Slide Presentations** - Create and edit slide presentations with themes, charts, and templates
+- 🎨 **Canvas Drawings** - Create and edit Excalidraw canvas drawings with shapes, text, arrows, and more
 - 🏷️ **Metadata Support** - Rich document metadata with tags, emojis, and descriptions
 
 ## Requirements
@@ -513,6 +514,89 @@ Q4 2024 Results
 })
 ```
 
+### 🎨 Canvas Drawings
+
+#### `get_canvas_guide`
+Get the comprehensive guide for creating and editing Excalidraw canvas drawings in Hillnote.
+
+```javascript
+// No input required
+// Returns: Complete guide with element types, layout planning, spacing rules, colors, and best practices
+```
+
+**Important:** When creating a canvas with `add_document`, the title MUST end with `.canvas.md` (e.g., "Architecture Diagram.canvas.md"). Do NOT provide content — the system generates it automatically.
+
+#### `read_canvas`
+Read and parse a canvas file, returning a structured description of all elements.
+
+```javascript
+// Input: { workspace: "workspace-name", canvasPath: "documents/my-drawing.canvas.md" }
+// Returns: { canvasPath: "...", elementCount: 5, elements: [...] }
+```
+
+#### `add_canvas_elements`
+Add shapes, text, arrows, and other elements to a canvas file.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   canvasPath: "documents/my-drawing.canvas.md",
+//   elements: [
+//     { type: "rectangle", x: 0, y: 0, width: 200, height: 100, label: "Start", backgroundColor: "#a5d8ff" },
+//     { type: "arrow", x: 200, y: 50, points: [[0, 0], [100, 0]] },
+//     { type: "rectangle", x: 300, y: 0, width: 200, height: 100, label: "End", backgroundColor: "#b2f2bb" },
+//     { type: "text", x: 0, y: 120, text: "My Diagram", fontSize: 28 }
+//   ]
+// }
+// Returns: { success: true, added: 4, totalElements: 4, elementIds: [...] }
+```
+
+**Supported element types:** `rectangle`, `ellipse`, `diamond`, `text`, `arrow`, `line`
+
+**Element properties:**
+- **Position/size:** `x`, `y`, `width`, `height`
+- **Styling:** `strokeColor`, `backgroundColor`, `fillStyle` (solid/hachure/cross-hatch), `strokeWidth`, `roughness` (0-2), `opacity` (0-100)
+- **Text:** `text`, `fontSize`, `fontFamily` (1=Virgil, 2=Helvetica, 3=Cascadia, 5=Excalifont), `textAlign`
+- **Arrows/lines:** `points` (e.g., `[[0,0],[200,100]]`), `startArrowhead`, `endArrowhead`
+- **Shapes:** `label` (centered text inside rectangle/ellipse/diamond)
+- **Grouping:** `groupId`
+
+#### `clear_canvas`
+Remove all elements from a canvas file, giving a blank slate.
+
+```javascript
+// Input: { workspace: "workspace-name", canvasPath: "documents/my-drawing.canvas.md" }
+// Returns: { success: true, message: "All elements cleared from canvas" }
+```
+
+**Example workflow:**
+```javascript
+// 1. Get the canvas guide first
+get_canvas_guide()
+
+// 2. Create a new canvas
+add_document({
+  workspace: "workspace-name",
+  name: "Architecture Diagram.canvas.md"  // Note: ends with .canvas.md, no content needed
+})
+
+// 3. Add elements to the canvas
+add_canvas_elements({
+  workspace: "workspace-name",
+  canvasPath: "documents/architecture-diagram.canvas.md",
+  elements: [
+    { type: "text", x: 0, y: 0, text: "System Architecture", fontSize: 28 },
+    { type: "rectangle", x: 0, y: 50, width: 200, height: 80, label: "Frontend", backgroundColor: "#a5d8ff" },
+    { type: "arrow", x: 200, y: 90, points: [[0, 0], [100, 0]] },
+    { type: "rectangle", x: 300, y: 50, width: 200, height: 80, label: "Backend", backgroundColor: "#b2f2bb" }
+  ]
+})
+
+// 4. To redraw from scratch
+clear_canvas({ workspace: "workspace-name", canvasPath: "documents/architecture-diagram.canvas.md" })
+// Then add_canvas_elements again with new elements
+```
+
 ### 🛠️ HTML Tool Management
 
 #### `add_html_tool`
@@ -632,7 +716,8 @@ mcp-server/
 │   │   ├── recipe.js      # Recipe management
 │   │   ├── html-tool.js   # HTML tool management
 │   │   ├── tasklist.js    # Tasklist/Kanban management
-│   │   └── slides.js      # Slide presentation guide
+│   │   ├── slides.js      # Slide presentation guide
+│   │   └── canvas.js      # Excalidraw canvas drawings
 │   └── utils/
 │       └── helpers.js     # Utility functions
 └── README.md

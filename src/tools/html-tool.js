@@ -194,6 +194,72 @@ export const htmlToolTools = [
       },
       required: ['workspacePath', 'toolName']
     }
+  },
+  {
+    name: 'read_html_file',
+    description: 'Read the content of a file inside an HTML tool folder in a workspace.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspacePath: {
+          type: 'string',
+          description: 'Absolute path to the workspace directory'
+        },
+        filePath: {
+          type: 'string',
+          description: 'File path relative to the workspace root (e.g. "resources/html/my-tool/index.html")'
+        }
+      },
+      required: ['workspacePath', 'filePath']
+    }
+  },
+  {
+    name: 'write_html_file',
+    description: 'Write content to a file inside an HTML tool folder in a workspace. The path must be relative to the workspace (e.g. "resources/html/my-tool/style.css"). Creates intermediate directories as needed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspacePath: {
+          type: 'string',
+          description: 'Absolute path to the workspace directory'
+        },
+        filePath: {
+          type: 'string',
+          description: 'File path relative to the workspace root (e.g. "resources/html/my-tool/script.js")'
+        },
+        content: {
+          type: 'string',
+          description: 'Full file content to write'
+        }
+      },
+      required: ['workspacePath', 'filePath', 'content']
+    }
+  },
+  {
+    name: 'replace_in_html_file',
+    description: 'Replace a specific string in an HTML tool file in a workspace. Finds the first occurrence of searchText and replaces it with replaceText.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspacePath: {
+          type: 'string',
+          description: 'Absolute path to the workspace directory'
+        },
+        filePath: {
+          type: 'string',
+          description: 'File path relative to the workspace root (e.g. "resources/html/my-tool/index.html")'
+        },
+        searchText: {
+          type: 'string',
+          description: 'Text to search for (must be unique enough to identify the exact location)'
+        },
+        replaceText: {
+          type: 'string',
+          description: 'Text to replace it with'
+        }
+      },
+      required: ['workspacePath', 'filePath', 'searchText', 'replaceText']
+    }
   }
 ];
 
@@ -761,6 +827,69 @@ export const htmlToolHandlers = {
         success: false,
         error: `Failed to get HTML tool: ${error.message}`
       };
+    }
+  },
+
+  read_html_file: async ({ workspacePath, filePath }) => {
+    try {
+      if (!filePath) return { error: 'filePath is required' };
+
+      const fullPath = path.join(workspacePath, filePath);
+      const content = await fs.readFile(fullPath, 'utf-8');
+      return { filePath, content };
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        return { error: `File not found: ${filePath}` };
+      }
+      return { error: `Failed to read file: ${error.message}` };
+    }
+  },
+
+  write_html_file: async ({ workspacePath, filePath, content }) => {
+    try {
+      if (!filePath) return { error: 'filePath is required' };
+      if (content === undefined) return { error: 'content is required' };
+
+      const fullPath = path.join(workspacePath, filePath);
+
+      // Ensure parent directory exists
+      const dirPath = path.dirname(fullPath);
+      await ensureDirectory(dirPath);
+
+      await fs.writeFile(fullPath, content, 'utf-8');
+      return { success: true, filePath };
+    } catch (error) {
+      return { error: `Failed to write file: ${error.message}` };
+    }
+  },
+
+  replace_in_html_file: async ({ workspacePath, filePath, searchText, replaceText }) => {
+    try {
+      if (!filePath) return { error: 'filePath is required' };
+      if (!searchText) return { error: 'searchText is required' };
+      if (replaceText === undefined) return { error: 'replaceText is required' };
+
+      const fullPath = path.join(workspacePath, filePath);
+
+      let existing;
+      try {
+        existing = await fs.readFile(fullPath, 'utf-8');
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          return { error: `File not found: ${filePath}` };
+        }
+        throw error;
+      }
+
+      if (!existing.includes(searchText)) {
+        return { error: `searchText not found in ${filePath}` };
+      }
+
+      const updated = existing.replace(searchText, replaceText);
+      await fs.writeFile(fullPath, updated, 'utf-8');
+      return { success: true, filePath };
+    } catch (error) {
+      return { error: `Failed to replace in file: ${error.message}` };
     }
   }
 };
