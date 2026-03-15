@@ -9,7 +9,6 @@ import { contentTools, contentHandlers } from './content.js';
 import { searchTools, searchHandlers } from './search.js';
 import { recipeTools, recipeHandlers } from './recipe.js';
 import { htmlToolTools, htmlToolHandlers } from './html-tool.js';
-import { tasklistTools, tasklistHandlers } from './tasklist.js';
 import { slidesTools, slidesHandlers } from './slides.js';
 import { databaseTools, databaseHandlers } from './database.js';
 import { canvasTools, canvasHandlers } from './canvas.js';
@@ -25,7 +24,6 @@ export const tools = [
   ...searchTools,
   ...recipeTools,
   ...htmlToolTools,
-  ...tasklistTools,
   ...slidesTools,
   ...databaseTools,
   ...canvasTools
@@ -39,7 +37,6 @@ export const handlers = {
   ...searchHandlers,
   ...recipeHandlers,
   ...htmlToolHandlers,
-  ...tasklistHandlers,
   ...slidesHandlers,
   ...databaseHandlers,
   ...canvasHandlers
@@ -59,8 +56,6 @@ export {
   recipeHandlers,
   htmlToolTools,
   htmlToolHandlers,
-  tasklistTools,
-  tasklistHandlers,
   slidesTools,
   slidesHandlers,
   databaseTools,

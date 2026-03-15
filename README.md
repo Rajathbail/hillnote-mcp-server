@@ -3,12 +3,12 @@
 [![NPM Version](https://img.shields.io/npm/v/@hillnote/mcp-server)](https://www.npmjs.com/package/@hillnote/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.0.4-green)](https://modelcontextprotocol.io)
-[![Platform](https://img.shields.io/badge/Platform-macOS-blue)](https://hillnote.com)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)](https://hillnote.com)
 [![Node](https://img.shields.io/badge/Node.js-%3E%3D%2018.0.0-brightgreen)](https://nodejs.org)
 
 Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for **Hillnote**, enabling AI assistants to interact with your document workspaces programmatically.
 
-> **Platform Support:** Currently supports **macOS**. Windows support coming soon with Hillnote for Windows launch.
+> **Platform Support:** Supports **macOS**, **Windows**, and **Linux**.
 
 ## Features
 
@@ -18,15 +18,15 @@ Official [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server 
 - ✏️ **Content Manipulation** - Advanced content editing with validation and preview
 - 🎯 **AI Recipes** - Manage and execute AI prompt recipes
 - 🛠️ **HTML Tools** - Create interactive HTML-based utilities
-- 📋 **Tasklist Management** - Create and manage Kanban-style tasklists with full task CRUD operations
-- 🎨 **Slide Presentations** - Create and edit slide presentations with themes, charts, and templates
+- 📋 **Database & Task Management** - Create databases with rows, columns, views, and kanban boards for task tracking
+- 🎨 **Slide Presentations** - Two-phase slide creation with storytelling guides and visual design tools
 - 🎨 **Canvas Drawings** - Create and edit Excalidraw canvas drawings with shapes, text, arrows, and more
 - 🏷️ **Metadata Support** - Rich document metadata with tags, emojis, and descriptions
 
 ## Requirements
 
-- **macOS** (Windows support coming soon)
-- **Hillnote Desktop App** for macOS
+- **macOS**, **Windows**, or **Linux**
+- **Hillnote Desktop App**
 - **Node.js** >= 18.0.0
 - **MCP-compatible client** (Claude Desktop, Cursor, VS Code, etc.)
 
@@ -122,7 +122,11 @@ If you experience issues after updating:
 
 ## Configuration
 
-The MCP server automatically discovers all your Hillnote workspaces from the app's configuration at `~/Library/Application Support/Hillnote/workspaces.json`.
+The MCP server automatically discovers all your Hillnote workspaces from the app's configuration:
+
+- **macOS:** `~/Library/Application Support/Hillnote/workspaces.json`
+- **Windows:** `%APPDATA%/Hillnote/workspaces.json`
+- **Linux:** `~/.config/Hillnote/workspaces.json`
 
 ### Configuration Examples
 
@@ -333,6 +337,8 @@ Append content to a specific markdown section.
 
 ### 🎯 AI Recipe Management
 
+Recipes are AI prompt overrides that trigger custom instructions when a user's request matches specific topics.
+
 #### `list_recipes`
 List all AI prompt recipes in a workspace.
 
@@ -346,151 +352,250 @@ Get a specific recipe by ID.
 
 ```javascript
 // Input: { workspacePath: "/path/to/workspace", recipeId: "recipe-id" }
-// Returns: Complete recipe with prompts and configuration
+// Returns: Complete recipe with trigger, instructions, and document references
 ```
 
-#### `add_recipe`
+#### `create_recipe`
 Create a new AI prompt recipe.
 
 ```javascript
 // Input: {
 //   workspacePath: "/path/to/workspace",
-//   name: "Recipe Name",
-//   description: "What this recipe does",
-//   prompts: [...],
-//   config: {...}
+//   recipe: {
+//     when_user_asks_about: "quarterly reports",
+//     override_instructions: "Use the company template and include KPIs...",
+//     required_documents: ["documents/template.md"],
+//     optional_documents: ["documents/past-reports.md"],
+//     output_format: "markdown"
+//   }
 // }
-// Returns: { success: true, recipeId: "new-id" }
+// Returns: { success: true, recipe: { id: "recipe_...", ... } }
 ```
 
 #### `update_recipe`
 Update an existing recipe.
 
 ```javascript
-// Input: { workspacePath: "/path/to/workspace", recipeId: "id", updates: {...} }
+// Input: {
+//   workspacePath: "/path/to/workspace",
+//   recipeId: "recipe-id",
+//   updates: {
+//     when_user_asks_about: "updated trigger",
+//     override_instructions: "updated instructions"
+//   }
+// }
 // Returns: { success: true }
 ```
 
-#### `delete_recipe`
-Delete a recipe.
+#### `get_recipe_documents`
+Load the content of documents referenced by a recipe.
 
 ```javascript
-// Input: { workspacePath: "/path/to/workspace", recipeId: "id" }
-// Returns: { success: true }
+// Input: { workspacePath: "/path/to/workspace", recipeId: "recipe-id", includeOptional: true }
+// Returns: { recipe: {...}, documents: { required: [...], optional: [...] } }
 ```
 
-### 📋 Tasklist Management
+### 📋 Database & Task Management
 
-#### `create_tasklist`
-Create a new tasklist (Kanban board) in a workspace.
+Databases are flexible folders containing markdown files (rows) with a `database.json` configuration. They can be used as task boards by adding `status` columns with kanban views.
+
+#### `create_database`
+Create a new database in a workspace.
 
 ```javascript
 // Input: {
 //   workspace: "workspace-name",
-//   tasklist: {
-//     name: "Project Tasks",
-//     columns: [
-//       { name: "To Do", color: "blue" },
-//       { name: "In Progress", color: "orange" },
-//       { name: "Done", isDoneColumn: true, color: "green" }
-//     ],
-//     viewMode: "projects"  // or "flat"
-//   }
+//   name: "Project Tasks",
+//   columns: [
+//     { id: "title", name: "Title", type: "title" },
+//     { id: "status", name: "Status", type: "status",
+//       options: ["To Do", "In Progress", "Done", "Archived"],
+//       optionColors: { "To Do": "gray", "In Progress": "amber", "Done": "emerald", "Archived": "purple" },
+//       optionStates: { "To Do": "normal", "In Progress": "normal", "Done": "done", "Archived": "archive" }
+//     },
+//     { id: "priority", name: "Priority", type: "select", options: ["Low", "Medium", "High"] },
+//     { id: "recurring", name: "Recurring", type: "recurring" }
+//   ],
+//   views: [
+//     { id: "kanban", name: "Board", type: "kanban", groupBy: "status" },
+//     { id: "table", name: "Table", type: "table" }
+//   ],
+//   defaultView: "kanban",
+//   folderPath: "optional/subfolder"
 // }
-// Returns: { success: true, tasklistName: "...", tasklistPath: "documents/...", columns: [...] }
+// Returns: { success: true, name: "...", path: "..." }
 ```
 
-#### `list_tasklists`
-List all tasklists in a workspace.
+**Column types:** `title`, `text`, `number`, `select`, `multiselect`, `status`, `checkbox`, `date`, `url`, `email`, `recurring`
+
+**Status columns** support `optionStates` mapping each option to `"normal"`, `"done"` (strikethrough), or `"archive"` (dimmed) — enabling kanban board behaviour.
+
+**Recurring columns** support auto-resetting tasks on daily/weekly/monthly/yearly schedules.
+
+#### `read_database`
+Read a database with optional filtering, sorting, and searching.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   databasePath: "Project Tasks",
+//   search: "optional search query",
+//   filters: [{ column: "status", operator: "equals", value: "In Progress" }],
+//   sort: { column: "priority", direction: "desc" },
+//   viewId: "kanban",
+//   limit: 50
+// }
+// Returns: Database config (columns, views) and matching rows
+```
+
+#### `list_databases`
+List all databases in a workspace.
 
 ```javascript
 // Input: { workspace: "workspace-name" }
-// Returns: Array of tasklists with task counts, project counts, and columns
+// Returns: Array of databases with metadata and row counts
 ```
 
-#### `read_tasklist`
-Read a complete tasklist structure with all task metadata.
+#### `delete_database`
+Delete a database and all its rows permanently.
 
 ```javascript
-// Input: { workspace: "workspace-name", tasklist: "Project Tasks" }
-// Returns: Complete tasklist with columns, projects, tasks, and metadata
-// Note: Task content not included - use read_document to read task content
+// Input: { workspace: "workspace-name", databasePath: "Project Tasks" }
+// Returns: { success: true }
 ```
 
-#### `add_task`
-Create a new task in a tasklist.
+#### `add_rows`
+Add one or more rows to a database.
 
 ```javascript
 // Input: {
 //   workspace: "workspace-name",
-//   tasklist: "Project Tasks",
-//   task: {
-//     name: "Implement feature X",
-//     content: "Task description...",
-//     status: "To Do",
-//     project: "Backend",  // optional
-//     priority: "high",    // low, medium, high
-//     assignedTo: "user@example.com",
-//     startDate: "2024-01-01",
-//     endDate: "2024-01-15",
-//     isRecurring: false,
-//     emoji: "🔥"
+//   databasePath: "Project Tasks",
+//   rows: [
+//     { title: "Implement feature X", status: "To Do", priority: "High", _content: "Task details..." },
+//     { title: "Fix bug Y", status: "In Progress", priority: "Medium" }
+//   ]
+// }
+// Returns: { success: true, added: [...] }
+```
+
+#### `update_rows`
+Update rows by ID (file path) or matching criteria.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   databasePath: "Project Tasks",
+//   updates: { status: "Done", priority: "Low" },
+//   ids: ["/path/to/row.md"],       // by file path
+//   where: { status: "In Progress" } // or by criteria
+// }
+// Returns: { success: true, updated: [...] }
+```
+
+#### `delete_rows`
+Delete rows by ID or matching criteria.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   databasePath: "Project Tasks",
+//   ids: ["/path/to/row.md"],
+//   where: { status: "Archived" }
+// }
+// Returns: { success: true }
+```
+
+#### `add_column`
+Add a new column to a database.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   databasePath: "Project Tasks",
+//   column: { id: "assignee", name: "Assignee", type: "text" },
+//   defaultValue: "Unassigned"
+// }
+// Returns: { success: true }
+```
+
+#### `update_column`
+Update column properties (name, type, options, colors, states).
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   databasePath: "Project Tasks",
+//   columnId: "status",
+//   updates: { options: ["To Do", "In Progress", "Review", "Done"] }
+// }
+// Returns: { success: true }
+```
+
+#### `delete_column`
+Remove a column from a database and all rows.
+
+```javascript
+// Input: { workspace: "workspace-name", databasePath: "Project Tasks", columnId: "priority" }
+// Returns: { success: true }
+```
+
+#### `create_view`
+Create a saved view with filters, sorts, and display options.
+
+```javascript
+// Input: {
+//   workspace: "workspace-name",
+//   databasePath: "Project Tasks",
+//   view: {
+//     name: "Active Tasks",
+//     type: "kanban",        // table, kanban, gallery, chart
+//     groupBy: "status",
+//     filters: [{ column: "status", operator: "notEquals", value: "Archived" }],
+//     sorts: [{ column: "priority", direction: "desc" }]
 //   }
 // }
-// Returns: { success: true, taskName: "...", taskPath: "...", status: "..." }
+// Returns: { success: true, viewId: "..." }
 ```
 
-#### `update_task_status`
-Move a task to a different column/status.
+#### `list_views`
+List all saved views for a database.
 
 ```javascript
-// Input: {
-//   workspace: "workspace-name",
-//   tasklist: "Project Tasks",
-//   taskName: "Implement feature X",
-//   newStatus: "In Progress"
-// }
-// Returns: { success: true, taskName: "...", oldStatus: "...", newStatus: "..." }
-```
-
-#### `update_task_metadata`
-Update task properties (priority, assignments, dates, recurring settings).
-
-```javascript
-// Input: {
-//   workspace: "workspace-name",
-//   tasklist: "Project Tasks",
-//   taskName: "Implement feature X",
-//   metadata: {
-//     priority: "high",
-//     assignedTo: "user@example.com",
-//     startDate: "2024-01-01",
-//     endDate: "2024-01-15",
-//     isRecurring: true,
-//     recurrenceFrequency: "weekly"  // daily, weekly, monthly, yearly
-//   }
-// }
-// Returns: { success: true, taskName: "...", updatedFields: [...] }
+// Input: { workspace: "workspace-name", databasePath: "Project Tasks" }
+// Returns: Array of view configurations
 ```
 
 ### 🎨 Slide Presentations
 
-#### `get_slides_guide`
-Get the comprehensive guide for creating and editing slide presentations in Hillnote.
+Slides use a two-phase workflow: write the story first, then add visual design.
+
+#### `get_slides_story_guide`
+Get the storytelling guide with 8 proven techniques (Hero's Journey, Sparklines, In Medias Res, etc.).
 
 ```javascript
 // No input required
-// Returns: Complete guide with syntax, templates, chart types, and best practices
+// Returns: Story-writing guide with narrative techniques and structure advice
+// Important: Do NOT use any visual layout markers (~split, ~inline, ~bg-, etc.) during this phase
+```
+
+#### `get_slides_visual_guide`
+Get the visual design guide for adding layout markers, images, charts, and diagrams.
+
+```javascript
+// Input: { documentPath: "documents/my-presentation.slides.md" }
+// Returns: Visual design guide with layout markers, chart types, mermaid diagrams, and examples
+// Note: Requires the .slides.md file to already exist (proves story has been drafted)
 ```
 
 **Important:** When creating slides with `add_document`, the title MUST end with `.slides.md` (e.g., "My Presentation.slides.md"). The `.slides.md` extension is what makes it a slide presentation.
 
 **Example workflow:**
 ```javascript
-// 1. Get the slides guide first
-get_slides_guide()
+// 1. Get the story guide first
+get_slides_story_guide()
 
-// 2. Create a new slide presentation
+// 2. Create the slide presentation (story content only, no visual markers)
 add_document({
   workspace: "workspace-name",
   name: "Quarterly Review.slides.md",  // Note: ends with .slides.md
@@ -503,7 +608,7 @@ theme: minimal
 
 Q4 2024 Results
 
----
+***
 
 # Key Metrics
 
@@ -512,6 +617,10 @@ Q4 2024 Results
 - Users: 10,000+
 `
 })
+
+// 3. Get the visual guide and enhance slides in batches of 3-5
+get_slides_visual_guide({ documentPath: "documents/quarterly-review.slides.md" })
+// Then edit the file to add ~split, ~inline, ~bg-, images, charts, etc.
 ```
 
 ### 🎨 Canvas Drawings
@@ -607,69 +716,110 @@ Create an interactive HTML tool in the workspace.
 //   workspacePath: "/path/to/workspace",
 //   toolName: "calculator",
 //   description: "Scientific calculator",
+//   category: "utilities",  // optional
 //   files: [
-//     { name: "index.html", content: "<!DOCTYPE html>..." },
-//     { name: "styles.css", content: "body { ... }" },
-//     { name: "script.js", content: "// JS code" }
+//     { filename: "index.html", content: "<!DOCTYPE html>...", isEntryPoint: true },
+//     { filename: "styles.css", content: "body { ... }" },
+//     { filename: "script.js", content: "// JS code" }
 //   ]
 // }
-// Returns: { success: true, toolPath: "resources/html/calculator", url: "..." }
+// Returns: { success: true, path: "resources/html/calculator", entryPoint: "index.html", markdownLink: "[html:calculator](...)" }
+```
+
+#### `edit_html_tool`
+Edit files in an existing HTML tool (create, update, or delete files).
+
+```javascript
+// Input: {
+//   workspacePath: "/path/to/workspace",
+//   toolName: "calculator",
+//   category: "utilities",  // optional
+//   operations: [
+//     { action: "update", filename: "index.html", content: "<!DOCTYPE html>..." },
+//     { action: "create", filename: "utils.js", content: "// new file" },
+//     { action: "delete", filename: "old-file.js" }
+//   ],
+//   updateMetadata: { description: "Updated calculator" }
+// }
+// Returns: { success: true, changes: { created: [...], updated: [...], deleted: [...] } }
+```
+
+#### `add_tool_to_doc`
+Insert an HTML tool reference into a document.
+
+```javascript
+// Input: {
+//   workspacePath: "/path/to/workspace",
+//   documentPath: "documents/my-doc.md",
+//   toolName: "calculator",
+//   displayName: "My Calculator",  // optional
+//   position: "end"  // "end", "beginning", or "after:<text>"
+// }
+// Returns: { success: true, toolLink: "[html:My Calculator](...)" }
 ```
 
 #### `list_html_tools`
 List all HTML tools in a workspace.
 
 ```javascript
-// Input: { workspacePath: "/path/to/workspace" }
-// Returns: Array of HTML tools with metadata
+// Input: { workspacePath: "/path/to/workspace", category: "utilities" }
+// Returns: Array of HTML tools with metadata and markdown links
 ```
 
 #### `get_html_tool`
-Get a specific HTML tool's files.
+Get a specific HTML tool's details and files.
 
 ```javascript
-// Input: { workspacePath: "/path/to/workspace", toolName: "calculator" }
-// Returns: Tool info with all file contents
+// Input: { workspacePath: "/path/to/workspace", toolName: "calculator", category: "utilities" }
+// Returns: Tool info with all file contents, entry point, and markdown link
 ```
 
-#### `update_html_tool`
-Update an HTML tool's files.
+#### `read_html_file`
+Read the content of a specific file inside an HTML tool.
+
+```javascript
+// Input: { workspacePath: "/path/to/workspace", filePath: "resources/html/calculator/index.html" }
+// Returns: { filePath: "...", content: "..." }
+```
+
+#### `write_html_file`
+Write or create a file inside an HTML tool folder.
+
+```javascript
+// Input: { workspacePath: "/path/to/workspace", filePath: "resources/html/calculator/style.css", content: "body { ... }" }
+// Returns: { success: true, filePath: "..." }
+```
+
+#### `replace_in_html_file`
+Find and replace text in an HTML tool file.
 
 ```javascript
 // Input: {
 //   workspacePath: "/path/to/workspace",
-//   toolName: "calculator",
-//   updates: { description: "...", files: [...] }
+//   filePath: "resources/html/calculator/index.html",
+//   searchText: "<title>Old Title</title>",
+//   replaceText: "<title>New Title</title>"
 // }
-// Returns: { success: true }
-```
-
-#### `delete_html_tool`
-Delete an HTML tool.
-
-```javascript
-// Input: { workspacePath: "/path/to/workspace", toolName: "calculator" }
-// Returns: { success: true }
+// Returns: { success: true, filePath: "..." }
 ```
 
 ## Workspace Structure
 
-Hillnote workspaces on macOS are typically stored in your Documents folder or custom locations:
+Hillnote workspaces are typically stored in your Documents folder or custom locations:
 
 ```
 ~/Documents/YourWorkspace/
 ├── readme.md                 # Workspace overview
 ├── documents-registry.json   # Document metadata
-├── ai-recipes.json          # AI prompt recipes
-├── documents/               # Markdown documents and tasklists
+├── ai_prompt_overrides.json # AI prompt recipes/overrides
+├── documents/               # Markdown documents and databases
 │   ├── document-1.md
 │   ├── folder/
 │   │   └── document-2.md
-│   └── Project Tasks/       # Tasklist (Kanban board)
-│       ├── tasklist.json    # Tasklist configuration
-│       ├── task-1.md        # Root-level task
-│       └── Backend/         # Project folder
-│           └── task-2.md    # Task in project
+│   └── Project Tasks/       # Database (e.g., task board)
+│       ├── database.json    # Database configuration (columns, views)
+│       ├── implement-feature-x.md  # Row (task) with frontmatter
+│       └── fix-bug-y.md    # Row (task) with frontmatter
 └── resources/               # Assets and tools
     ├── images/             # Image attachments
     └── html/               # HTML tools
@@ -715,8 +865,8 @@ mcp-server/
 │   │   ├── search.js      # Search tools
 │   │   ├── recipe.js      # Recipe management
 │   │   ├── html-tool.js   # HTML tool management
-│   │   ├── tasklist.js    # Tasklist/Kanban management
-│   │   ├── slides.js      # Slide presentation guide
+│   │   ├── database.js    # Database, row, column, and view management
+│   │   ├── slides.js      # Slide presentation guides (story + visual)
 │   │   └── canvas.js      # Excalidraw canvas drawings
 │   └── utils/
 │       └── helpers.js     # Utility functions

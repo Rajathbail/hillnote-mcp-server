@@ -6,7 +6,14 @@ import os from 'os';
  * Get the workspaces.json file path
  */
 export function getWorkspacesJsonPath() {
-  return path.join(os.homedir(), 'Library', 'Application Support', 'Hillnote', 'workspaces.json');
+  const platform = process.platform;
+  if (platform === 'win32') {
+    return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'Hillnote', 'workspaces.json');
+  } else if (platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Application Support', 'Hillnote', 'workspaces.json');
+  } else {
+    return path.join(os.homedir(), '.config', 'Hillnote', 'workspaces.json');
+  }
 }
 
 /**
@@ -16,7 +23,7 @@ export function getWorkspacesJsonPath() {
  */
 export async function resolveWorkspace(workspaceIdOrPath) {
   // If it's already a full path, return it
-  if (workspaceIdOrPath.startsWith('/') || workspaceIdOrPath.includes('\\')) {
+  if (workspaceIdOrPath.startsWith('/') || workspaceIdOrPath.includes('\\') || /^[a-zA-Z]:/.test(workspaceIdOrPath)) {
     return {
       path: workspaceIdOrPath,
       name: path.basename(workspaceIdOrPath),
@@ -112,8 +119,10 @@ export async function getDocumentPath(workspacePath, documentId) {
   if (!doc) {
     // If not found, check if the documentId itself is the filename
     const possibleFilename = documentId.endsWith('.md') ? documentId : `${documentId}.md`;
-    doc = registry.documents.find(d => 
-      d.path === `documents/${possibleFilename}` ||
+    const normalizedPossible = path.join('documents', possibleFilename);
+    doc = registry.documents.find(d =>
+      d.path === normalizedPossible ||
+      d.path?.replace(/\\/g, '/') === `documents/${possibleFilename}` ||
       d.path === possibleFilename
     );
   }

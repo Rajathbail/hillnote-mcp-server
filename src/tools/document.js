@@ -30,7 +30,9 @@ export async function readDocument(workspaceIdOrPath, documentId) {
       d.fileName === documentId ||
       d.fileName === `${documentId}.md` ||
       d.path === `documents/${documentId}.md` ||
-      d.path === `documents/${documentId}`
+      d.path === `documents/${documentId}` ||
+      d.path === `documents\\${documentId}.md` ||
+      d.path === `documents\\${documentId}`
     );
     
     return {

@@ -72,7 +72,7 @@ export async function readWorkspaceRegistry(workspaceIdOrPath) {
     let workspaceName;
     
     // Check if it's a workspace ID or a path
-    if (workspaceIdOrPath.startsWith('/') || workspaceIdOrPath.includes('\\')) {
+    if (workspaceIdOrPath.startsWith('/') || workspaceIdOrPath.includes('\\') || /^[a-zA-Z]:/.test(workspaceIdOrPath)) {
       // It's a path
       workspacePath = workspaceIdOrPath;
       workspaceName = path.basename(workspacePath);

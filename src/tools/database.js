@@ -171,7 +171,7 @@ async function getDatabaseRows(databaseFullPath) {
 /**
  * Create a new database
  */
-export async function createDatabase(workspaceIdOrPath, name, columns = [], folderPath = null) {
+export async function createDatabase(workspaceIdOrPath, name, columns = [], folderPath = null, views = null, defaultView = null) {
   try {
     const workspace = await resolveWorkspace(workspaceIdOrPath);
 
@@ -200,13 +200,15 @@ export async function createDatabase(workspaceIdOrPath, name, columns = [], fold
     ];
 
     // Create default config
+    const configViews = views && views.length > 0 ? views : [
+      { id: 'default', name: 'All Items', type: 'table', filters: [], sorts: [] }
+    ];
+
     const config = {
       name,
       columns: defaultColumns,
-      views: [
-        { id: 'default', name: 'All Items', type: 'table', filters: [], sorts: [] }
-      ],
-      defaultView: 'default',
+      views: configViews,
+      defaultView: defaultView || configViews[0].id,
       created: new Date().toISOString()
     };
 
@@ -842,7 +844,7 @@ export const databaseTools = [
   // Database Management
   {
     name: 'create_database',
-    description: 'Create a new database in a workspace. A database is a folder containing markdown files (rows) with a database.json configuration file.',
+    description: 'Create a new database in a workspace. A database is a folder containing markdown files (rows) with a database.json configuration file. Databases can be used as task boards by adding a "status" column type with options like "To Do", "In Progress", "Done", "Archived" and setting up a kanban view grouped by status. Status options support "done" (strikethrough) and "archive" (dimmed) states. Add a "recurring" column for auto-resetting tasks on daily/weekly/monthly/yearly schedules.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -856,7 +858,7 @@ export const databaseTools = [
         },
         columns: {
           type: 'array',
-          description: 'Column definitions. If not provided, default columns (title, status, tags) will be created.',
+          description: 'Column definitions. If not provided, default columns (title, status, tags) will be created. Use "status" type for kanban-compatible status columns with done/archive states. Use "recurring" type for auto-resetting task schedules.',
           items: {
             type: 'object',
             properties: {
@@ -864,17 +866,47 @@ export const databaseTools = [
               name: { type: 'string', description: 'Display name for the column' },
               type: {
                 type: 'string',
-                enum: ['title', 'text', 'number', 'select', 'multiselect', 'checkbox', 'date', 'url'],
-                description: 'Column type'
+                enum: ['title', 'text', 'number', 'select', 'multiselect', 'status', 'checkbox', 'date', 'url', 'email', 'recurring'],
+                description: 'Column type. Use "status" for task status columns (supports kanban board view with done/archive states). Use "select" for regular single-choice dropdowns. Use "recurring" for auto-resetting tasks on a schedule (daily/weekly/monthly/yearly).'
               },
               options: {
                 type: 'array',
                 items: { type: 'string' },
-                description: 'Options for select/multiselect columns'
+                description: 'Options for select/multiselect/status columns (e.g., ["To Do", "In Progress", "Done", "Archived"])'
+              },
+              optionColors: {
+                type: 'object',
+                description: 'Color mapping for each option (e.g., {"To Do": "gray", "In Progress": "amber", "Done": "emerald", "Archived": "purple"}). Available colors: gray, red, amber, emerald, blue, purple, pink, cyan, orange, etc.',
+                additionalProperties: { type: 'string' }
+              },
+              optionStates: {
+                type: 'object',
+                description: 'State mapping for status columns. Each option maps to "normal", "done", or "archive" (e.g., {"To Do": "normal", "In Progress": "normal", "Done": "done", "Archived": "archive"}). Rows with "done" status appear completed with strikethrough. Rows with "archive" status appear dimmed.',
+                additionalProperties: { type: 'string', enum: ['normal', 'done', 'archive'] }
               }
             },
             required: ['id', 'name', 'type']
           }
+        },
+        views: {
+          type: 'array',
+          description: 'View definitions. If not provided, a default table view is created. Add a kanban view with groupBy set to a status/select column ID for a board layout.',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', description: 'View ID' },
+              name: { type: 'string', description: 'View display name' },
+              type: { type: 'string', enum: ['table', 'kanban', 'gallery', 'chart'], description: 'View type' },
+              groupBy: { type: 'string', description: 'Column ID to group by (required for kanban view)' },
+              filters: { type: 'array', items: { type: 'object' } },
+              sorts: { type: 'array', items: { type: 'object' } }
+            },
+            required: ['id', 'name', 'type']
+          }
+        },
+        defaultView: {
+          type: 'string',
+          description: 'ID of the default view to show when opening the database (e.g., "kanban" for board view)'
         },
         folderPath: {
           type: 'string',
@@ -886,7 +918,7 @@ export const databaseTools = [
   },
   {
     name: 'read_database',
-    description: 'Read a database with optional filtering, sorting, and searching. Returns database config and rows.',
+    description: 'Read a database with optional filtering, sorting, and searching. Returns database config (columns with types/options/colors/states) and rows. Databases with status columns can be used as task boards — filter by status to see tasks in specific states (normal/done/archive). Recurring columns show task reset schedules.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -976,7 +1008,7 @@ export const databaseTools = [
   // Row Operations
   {
     name: 'add_rows',
-    description: 'Add one or more rows to a database. Each row is a markdown file with frontmatter properties.',
+    description: 'Add one or more rows to a database. Each row is a markdown file with YAML frontmatter properties. For status/select columns, use the option name as the value (e.g., "To Do", "In Progress", "Done", "Archived"). For recurring columns, set value as an object with frequency (daily/weekly/monthly/yearly), resetStatus, and nextReset fields.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1103,13 +1135,23 @@ export const databaseTools = [
             name: { type: 'string', description: 'Display name' },
             type: {
               type: 'string',
-              enum: ['title', 'text', 'number', 'select', 'multiselect', 'checkbox', 'date', 'url'],
-              description: 'Column type'
+              enum: ['title', 'text', 'number', 'select', 'multiselect', 'status', 'checkbox', 'date', 'url', 'email', 'recurring'],
+              description: 'Column type. Use "status" for task status columns (supports kanban views with done/archive states). Use "recurring" for auto-resetting task schedules.'
             },
             options: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Options for select/multiselect columns'
+              description: 'Options for select/multiselect/status columns'
+            },
+            optionColors: {
+              type: 'object',
+              description: 'Color mapping for each option',
+              additionalProperties: { type: 'string' }
+            },
+            optionStates: {
+              type: 'object',
+              description: 'State mapping for status columns ("normal", "done", or "archive")',
+              additionalProperties: { type: 'string', enum: ['normal', 'done', 'archive'] }
             }
           },
           required: ['id', 'name', 'type']
@@ -1147,11 +1189,21 @@ export const databaseTools = [
             name: { type: 'string', description: 'New display name' },
             type: {
               type: 'string',
-              enum: ['title', 'text', 'number', 'select', 'multiselect', 'checkbox', 'date', 'url']
+              enum: ['title', 'text', 'number', 'select', 'multiselect', 'status', 'checkbox', 'date', 'url', 'email', 'recurring']
             },
             options: {
               type: 'array',
               items: { type: 'string' }
+            },
+            optionColors: {
+              type: 'object',
+              description: 'Color mapping for each option',
+              additionalProperties: { type: 'string' }
+            },
+            optionStates: {
+              type: 'object',
+              description: 'State mapping for status columns ("normal", "done", or "archive")',
+              additionalProperties: { type: 'string', enum: ['normal', 'done', 'archive'] }
             }
           }
         }
@@ -1185,7 +1237,7 @@ export const databaseTools = [
   // View Operations
   {
     name: 'create_view',
-    description: 'Create a saved view with filters, sorts, and display options.',
+    description: 'Create a saved view with filters, sorts, and display options. Use type "kanban" with groupBy set to a status/select column ID to create a board view.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1206,7 +1258,8 @@ export const databaseTools = [
             type: {
               type: 'string',
               enum: ['table', 'kanban', 'gallery', 'chart'],
-              description: 'View type'
+              description: 'View type. Defaults to "table" if not specified.',
+              default: 'table'
             },
             filters: {
               type: 'array',
@@ -1267,7 +1320,7 @@ export const databaseTools = [
 export const databaseHandlers = {
   // Database Management
   create_database: async (args) =>
-    createDatabase(args.workspace, args.name, args.columns, args.folderPath),
+    createDatabase(args.workspace, args.name, args.columns, args.folderPath, args.views, args.defaultView),
 
   read_database: async (args) =>
     readDatabase(args.workspace, args.databasePath, {
